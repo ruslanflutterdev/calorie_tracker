@@ -23,6 +23,22 @@ class CalorieTrackerStorage {
     await _saveData('meals', json);
   }
 
+  static Future<void> saveDailyCalories(int calories) async {
+    await _saveData('daily_calories', calories.toString());
+  }
+
+  static Future<int> loadDailyCalories() async {
+    try {
+      final dirPath = await _getApplicationDirectory();
+      final filePath = '$dirPath/daily_calories.json';
+      final file = File(filePath);
+      final data = await file.readAsString();
+      return int.parse(data);
+    } catch (err) {
+      return 2000;
+    }
+  }
+
   static Future<void> _saveData(String fileName, String data) async {
     final dirPath = await _getApplicationDirectory();
     final filePath = '$dirPath/$fileName.json';

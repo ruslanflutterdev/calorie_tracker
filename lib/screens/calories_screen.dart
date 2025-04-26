@@ -1,25 +1,64 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../models/meal_model.dart';
+import '../utils/calorie_tracker_storage.dart';
 
-class CaloriesPage extends StatefulWidget {
-  const CaloriesPage({super.key});
+class CaloriesScreen extends StatefulWidget {
+  const CaloriesScreen({super.key});
 
   @override
-  State<CaloriesPage> createState() => _CaloriesPageState();
+  State<CaloriesScreen> createState() => _CaloriesScreenState();
 }
 
-class _CaloriesPageState extends State<CaloriesPage> {
-  int _currentCalories = 1000;
-  final int _dailyGoal = 2000;
+class _CaloriesScreenState extends State<CaloriesScreen> {
+  int _currentCalories = 0;
+  int _dailyGoal = 2000;
   final List<double> _weeklyCalories = [
-    1200,
-    1500,
-    2200,
-    1900,
-    1600,
-    2100,
-    1800,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   ];
+  List<MealModel> _todayMeals = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDailyCalories();
+    _loadTodayMeals();
+
+  }
+
+  Future<void> _loadDailyCalories() async {
+    final calories = await CalorieTrackerStorage.loadDailyCalories();
+    setState(() {
+      _dailyGoal = calories;
+    });
+  }
+
+  Future<void> _loadTodayMeals() async {
+    final allMeals = await CalorieTrackerStorage.loadMeals();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    setState(() {
+      _todayMeals =
+          allMeals
+              .where(
+                (meal) =>
+                    meal.dateTime.year == today.year &&
+                    meal.dateTime.month == today.month &&
+                    meal.dateTime.day == today.day,
+              )
+              .toList();
+      _currentCalories = _todayMeals.fold(
+        0,
+        (sum, meal) => sum + meal.calories,
+      );
+    });
+  }
 
   void _incrementCalories() {
     setState(() {
@@ -95,7 +134,6 @@ class _CaloriesPageState extends State<CaloriesPage> {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16.0),
-          // --- BarChart ---
           SizedBox(
             height: 220,
             child: BarChart(
@@ -159,7 +197,7 @@ class _CaloriesPageState extends State<CaloriesPage> {
                   touchTooltipData: BarTouchTooltipData(
                     tooltipMargin: 8,
                     tooltipPadding: const EdgeInsets.all(8),
-                    tooltipBorder: BorderSide(color: Colors.blueGrey),
+                    tooltipBorder: const BorderSide(color: Colors.blueGrey),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
                         '${_weeklyCalories[groupIndex].toInt()} ккал',
