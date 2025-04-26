@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     DestinationModel(
       title: 'History Page',
       action: [],
-      screen: HistoryPage(),
+      screen: HistoryScreen(),
       icon: Icons.history_edu_rounded,
       label: 'History',
       selectedIcon: Icons.history_edu,
