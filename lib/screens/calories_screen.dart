@@ -18,6 +18,12 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
   List<double> _weeklyCalories = [0, 0, 0, 0, 0, 0, 0];
   List<MealModel> _todayMeals = [];
   double _maxYWeeklyCalories = 3000;
+  int _totalProteins = 0;
+  int _totalFats = 0;
+  int _totalCarbs = 0;
+  String _selectedRange = 'День';
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   @override
   void initState() {
@@ -25,7 +31,7 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
     initializeDateFormatting('ru_RU', null);
     _loadDailyCalories();
     _loadWeeklyCalories();
-    _loadTodayMeals();
+    _loadMealsForRange();
   }
 
   Future<void> _loadDailyCalories() async {
@@ -62,27 +68,104 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
     });
   }
 
-  Future<void> _loadTodayMeals() async {
+  Future<void> _loadMealsForRange() async {
     final allMeals = await CalorieTrackerStorage.loadMeals();
+    DateTime start, end;
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+
+    switch (_selectedRange) {
+      case 'День':
+        start = DateTime(now.year, now.month, now.day, 0, 0, 0);
+        end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        break;
+      case 'Неделя':
+        start = now.subtract(Duration(days: now.weekday - 1));
+        start = DateTime(start.year, start.month, start.day, 0, 0, 0);
+        end = now.add(Duration(days: 7 - now.weekday));
+        end = DateTime(end.year, end.month, end.day, 23, 59, 59);
+        break;
+      case 'Месяц':
+        start = DateTime(now.year, now.month, 1, 0, 0, 0);
+        end = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+        break;
+      case 'Интервал':
+        if (_startDate != null && _endDate != null) {
+          start = DateTime(
+            _startDate!.year,
+            _startDate!.month,
+            _startDate!.day,
+            0,
+            0,
+            0,
+          );
+          end = DateTime(
+            _endDate!.year,
+            _endDate!.month,
+            _endDate!.day,
+            23,
+            59,
+            59,
+          );
+        } else {
+          start = DateTime.now();
+          end = DateTime.now();
+        }
+        break;
+      default:
+        start = DateTime.now();
+        end = DateTime.now();
+    }
+
+    final filteredMeals = allMeals.where(
+      (meal) =>
+          meal.dateTime.isAfter(
+            start.subtract(const Duration(milliseconds: 1)),
+          ) &&
+          meal.dateTime.isBefore(end.add(const Duration(milliseconds: 1))),
+    );
+
     setState(() {
-      _todayMeals =
-          allMeals
-              .where(
-                (meal) =>
-                    meal.dateTime.year == today.year &&
-                    meal.dateTime.month == today.month &&
-                    meal.dateTime.day == today.day,
-              )
-              .toList();
+      _todayMeals = filteredMeals.toList();
       _currentCalories = _todayMeals.fold(
         0,
         (sum, meal) => sum + meal.calories,
       );
+      _totalProteins = _todayMeals.fold(
+        0,
+        (sum, meal) => sum + (meal.proteins ?? 0),
+      );
+      _totalFats = _todayMeals.fold(0, (sum, meal) => sum + (meal.fats ?? 0));
+      _totalCarbs = _todayMeals.fold(0, (sum, meal) => sum + (meal.carbs ?? 0));
     });
   }
 
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(
+        start: _startDate ?? DateTime.now().subtract(const Duration(days: 7)),
+        end: _endDate ?? DateTime.now(),
+      ),
+    );
+
+    if (picked != null &&
+        picked !=
+            DateTimeRange(
+              start:
+                  _startDate ??
+                  DateTime.now().subtract(const Duration(days: 7)),
+              end: _endDate ?? DateTime.now(),
+            )) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+        _selectedRange = 'Интервал';
+      });
+      _loadMealsForRange();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +176,6 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
       7,
       (index) => now.subtract(Duration(days: 6 - index)),
     );
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -246,8 +328,161 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 32.0),
+          Text(
+            'Соотношение нутриентов (${_selectedRange})',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              DropdownButton<String>(
+                value: _selectedRange,
+                items:
+                    <String>['День', 'Неделя', 'Месяц', 'Интервал'].map((
+                      String value,
+                    ) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedRange = newValue!;
+                    if (_selectedRange != 'Интервал') {
+                      _startDate = null;
+                      _endDate = null;
+                    }
+                  });
+                  _loadMealsForRange();
+                },
+              ),
+              if (_selectedRange == 'Интервал')
+                ElevatedButton(
+                  onPressed: _selectDateRange,
+                  child: const Text('Выбрать даты'),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+          SizedBox(
+            height: 200,
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 5,
+                centerSpaceRadius: 40,
+                sections: _generateNutrientData(),
+                borderData: FlBorderData(show: false),
+                pieTouchData: PieTouchData(
+                  touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          pieTouchResponse == null ||
+                          pieTouchResponse.touchedSection == null) {
+                        return;
+                      }
+                    });
+                  },
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNutrientIndicator(Colors.blue, 'Белки: ${_totalProteins}г'),
+              _buildNutrientIndicator(Colors.green, 'Жиры: ${_totalFats}г'),
+              _buildNutrientIndicator(
+                Colors.orange,
+                'Углеводы: ${_totalCarbs}г',
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  List<PieChartSectionData> _generateNutrientData() {
+    final totalNutrients = _totalProteins + _totalFats + _totalCarbs;
+    List<PieChartSectionData> list = [];
+
+    if (totalNutrients > 0) {
+      list.add(
+        PieChartSectionData(
+          value: _totalProteins.toDouble(),
+          color: Colors.blue,
+          title:
+              '${(_totalProteins / totalNutrients * 100).toStringAsFixed(1)}%',
+          radius: 50,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+      list.add(
+        PieChartSectionData(
+          value: _totalFats.toDouble(),
+          color: Colors.green,
+          title: '${(_totalFats / totalNutrients * 100).toStringAsFixed(1)}%',
+          radius: 45,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+      list.add(
+        PieChartSectionData(
+          value: _totalCarbs.toDouble(),
+          color: Colors.orange,
+          title: '${(_totalCarbs / totalNutrients * 100).toStringAsFixed(1)}%',
+          radius: 40,
+          titleStyle: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    } else {
+      list.add(
+        PieChartSectionData(
+          value: 1,
+          color: Colors.grey[300]!,
+          title: 'Нет данных',
+          radius: 50,
+          titleStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      );
+    }
+
+    return list;
+  }
+
+  Widget _buildNutrientIndicator(Color color, String text) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Text(text),
+      ],
     );
   }
 }

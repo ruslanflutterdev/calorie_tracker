@@ -8,7 +8,14 @@ import 'history_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool isDarkMode;
+  final Function(bool) onChangeTheme;
+
+  const HomeScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onChangeTheme,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -199,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(currentDestination.title),
         actions: [
+          Switch(value: widget.isDarkMode, onChanged: widget.onChangeTheme),
           if (_currentPageIndex == 0)
             IconButton(
               icon: const Icon(Icons.add),

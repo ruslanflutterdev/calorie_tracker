@@ -9,7 +9,9 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final TextEditingController _dailyCaloriesController = TextEditingController(text: '2000');
+  final TextEditingController _dailyCaloriesController = TextEditingController(
+    text: '2000',
+  );
 
   @override
   void initState() {
@@ -33,7 +35,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, введите корректное значение калорий')),
+        const SnackBar(
+          content: Text('Пожалуйста, введите корректное значение калорий'),
+        ),
       );
     }
   }

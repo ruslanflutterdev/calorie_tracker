@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/meal_model.dart';
 import '../utils/calorie_tracker_storage.dart';
+import 'edit_meal_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -33,6 +34,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     await CalorieTrackerStorage.saveMeals(_meals);
   }
 
+  Future<void> _editMeal(
+    BuildContext context,
+    int index,
+    MealModel meal,
+  ) async {
+    final updatedMeal = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => EditMealScreen(meal: meal)),
+    );
+
+    if (updatedMeal != null) {
+      setState(() {
+        _meals[index] = updatedMeal;
+      });
+      await CalorieTrackerStorage.saveMeals(_meals);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return _meals.isEmpty
@@ -54,7 +73,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: ListTile(
                 title: Text(meal.description),
                 subtitle: Text(
-                  '${DateFormat('dd.MM.yyyy HH:mm').format(meal.dateTime)} - ${meal.calories} ккал',
+                  '${DateFormat('dd.MM.yyyy HH:mm').format(meal.dateTime)} - ${meal.calories} ккал'
+                  '${meal.proteins != null ? ' - Белки: ${meal.proteins}г' : ''}'
+                  '${meal.fats != null ? ' - Жиры: ${meal.fats}г' : ''}'
+                  '${meal.carbs != null ? ' - Углеводы: ${meal.carbs}г' : ''}',
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _editMeal(context, index, meal),
                 ),
               ),
             );
