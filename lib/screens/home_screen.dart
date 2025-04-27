@@ -19,27 +19,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<DestinationModel> destinations = [
     DestinationModel(
-      title: 'Home Page',
+      title: 'Трекер калорий',
       action: [],
       screen: const CaloriesScreen(),
       icon: Icons.home_outlined,
-      label: 'Home',
+      label: 'Главная',
       selectedIcon: Icons.home,
     ),
     DestinationModel(
-      title: 'History Page',
+      title: 'История приемов пищи',
       action: [],
       screen: HistoryScreen(),
       icon: Icons.history_edu_rounded,
-      label: 'History',
+      label: 'История',
       selectedIcon: Icons.history_edu,
     ),
     DestinationModel(
-      title: 'Settings Page',
+      title: 'Настройки',
       action: [],
       screen: SettingsScreen(),
       icon: Icons.settings_outlined,
-      label: 'Settings',
+      label: 'Настройки',
       selectedIcon: Icons.settings,
     ),
   ];

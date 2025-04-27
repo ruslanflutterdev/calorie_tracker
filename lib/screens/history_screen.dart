@@ -35,34 +35,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('История приемов пищи')),
-      body:
-          _meals.isEmpty
-              ? const Center(child: Text('Нет данных'))
-              : ListView.builder(
-                itemCount: _meals.length,
-                itemBuilder: (context, index) {
-                  final meal = _meals[index];
-                  return Dismissible(
-                    key: UniqueKey(),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      color: Colors.red,
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: const Icon(Icons.delete, color: Colors.white),
-                    ),
-                    onDismissed: (direction) => _deleteMeal(index),
-                    child: ListTile(
-                      title: Text(meal.description),
-                      subtitle: Text(
-                        '${DateFormat('dd.MM.yyyy HH:mm').format(meal.dateTime)} - ${meal.calories} ккал',
-                      ),
-                    ),
-                  );
-                },
+    return _meals.isEmpty
+        ? const Center(child: Text('Нет данных'))
+        : ListView.builder(
+          itemCount: _meals.length,
+          itemBuilder: (context, index) {
+            final meal = _meals[index];
+            return Dismissible(
+              key: UniqueKey(),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                color: Colors.red,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: const Icon(Icons.delete, color: Colors.white),
               ),
-    );
+              onDismissed: (direction) => _deleteMeal(index),
+              child: ListTile(
+                title: Text(meal.description),
+                subtitle: Text(
+                  '${DateFormat('dd.MM.yyyy HH:mm').format(meal.dateTime)} - ${meal.calories} ккал',
+                ),
+              ),
+            );
+          },
+        );
   }
 }

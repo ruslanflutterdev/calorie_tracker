@@ -1,5 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import '../models/meal_model.dart';
 import '../utils/calorie_tracker_storage.dart';
 
@@ -13,29 +15,50 @@ class CaloriesScreen extends StatefulWidget {
 class _CaloriesScreenState extends State<CaloriesScreen> {
   int _currentCalories = 0;
   int _dailyGoal = 2000;
-  final List<double> _weeklyCalories = [
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-  ];
+  List<double> _weeklyCalories = [0, 0, 0, 0, 0, 0, 0];
   List<MealModel> _todayMeals = [];
+  double _maxYWeeklyCalories = 3000;
 
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('ru_RU', null);
     _loadDailyCalories();
+    _loadWeeklyCalories();
     _loadTodayMeals();
-
   }
 
   Future<void> _loadDailyCalories() async {
     final calories = await CalorieTrackerStorage.loadDailyCalories();
     setState(() {
       _dailyGoal = calories;
+    });
+  }
+
+  Future<void> _loadWeeklyCalories() async {
+    final allMeals = await CalorieTrackerStorage.loadMeals();
+    final now = DateTime.now();
+    List<double> weeklyCalories = [];
+    double maxCalories = 0;
+    for (int i = 0; i < 7; i++) {
+      final day = now.subtract(Duration(days: 6 - i));
+      final startOfDay = DateTime(day.year, day.month, day.day, 0, 0, 0);
+      final endOfDay = DateTime(day.year, day.month, day.day, 23, 59, 59);
+      final dailyMeals = allMeals.where(
+        (meal) =>
+            meal.dateTime.isAfter(startOfDay) &&
+            meal.dateTime.isBefore(endOfDay),
+      );
+      final dailyTotal =
+          dailyMeals.fold(0, (sum, meal) => sum + meal.calories).toDouble();
+      weeklyCalories.add(dailyTotal);
+      if (dailyTotal > maxCalories) {
+        maxCalories = dailyTotal;
+      }
+    }
+    setState(() {
+      _weeklyCalories = weeklyCalories;
+      _maxYWeeklyCalories = maxCalories > 0 ? maxCalories * 1.3 : 3500;
     });
   }
 
@@ -60,19 +83,16 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
     });
   }
 
-  void _incrementCalories() {
-    setState(() {
-      _currentCalories += 250;
-      if (_currentCalories > _dailyGoal * 2) {
-        _currentCalories = _dailyGoal * 2;
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     final double progress = _currentCalories / _dailyGoal;
     final bool isOverLimit = _currentCalories > _dailyGoal;
+    final now = DateTime.now();
+    final weekDays = List.generate(
+      7,
+      (index) => now.subtract(Duration(days: 6 - index)),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
@@ -135,7 +155,7 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
           ),
           const SizedBox(height: 16.0),
           SizedBox(
-            height: 220,
+            height: 200,
             child: BarChart(
               BarChartData(
                 gridData: const FlGridData(show: false),
@@ -144,19 +164,13 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
-                        final weekDays = [
-                          'Пн',
-                          'Вт',
-                          'Ср',
-                          'Чт',
-                          'Пт',
-                          'Сб',
-                          'Вс',
-                        ];
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            weekDays[value.toInt() % 7],
+                            DateFormat(
+                              'E',
+                              'ru_RU',
+                            ).format(weekDays[value.toInt() % 7]),
                             style: const TextStyle(fontSize: 12),
                           ),
                         );
@@ -164,10 +178,29 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                     ),
                   ),
                   leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: true),
+                    sideTitles: SideTitles(showTitles: false),
                   ),
                   topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        final weeklyCalorie =
+                            _weeklyCalories[value.toInt() % 7].toInt();
+                        return weeklyCalorie > 0
+                            ? Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Text(
+                                weeklyCalorie.toString(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                            : const SizedBox.shrink();
+                      },
+                      reservedSize: 20,
+                    ),
                   ),
                   rightTitles: AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
@@ -209,13 +242,9 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
                     },
                   ),
                 ),
+                maxY: _maxYWeeklyCalories,
               ),
             ),
-          ),
-          const SizedBox(height: 32.0),
-          ElevatedButton(
-            onPressed: _incrementCalories,
-            child: const Text('Увеличить калории на 250'),
           ),
         ],
       ),
