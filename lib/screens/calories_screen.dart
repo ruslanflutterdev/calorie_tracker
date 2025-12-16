@@ -32,7 +32,20 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
     _loadDailyCalories();
     _loadWeeklyCalories();
     _loadMealsForRange();
+    //CalorieTrackerStorage.mealsNotifier.addListener(_loadMealsForRangeerandeWeeklyCalories);
   }
+
+  //@override
+  //void dispose() {
+
+  //CalorieTrackerStorage.mealsNotifier.removeListener(_loadMealsForRangeAndWeeklyCalories);
+  //super.dispose();
+  // }
+
+  //void _loadMealsForRangeAndWeeklyCalories() {
+  // _loadMealsForRange();
+  // _loadWeeklyCalories();
+  // }
 
   Future<void> _loadDailyCalories() async {
     final calories = await CalorieTrackerStorage.loadDailyCalories();
@@ -330,7 +343,7 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
           ),
           const SizedBox(height: 32.0),
           Text(
-            'Соотношение нутриентов (${_selectedRange})',
+            'Соотношение нутриентов ($_selectedRange)',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -395,11 +408,11 @@ class _CaloriesScreenState extends State<CaloriesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNutrientIndicator(Colors.blue, 'Белки: ${_totalProteins}г'),
-              _buildNutrientIndicator(Colors.green, 'Жиры: ${_totalFats}г'),
+              _buildNutrientIndicator(Colors.blue, 'Белки: $_totalProteinsг'),
+              _buildNutrientIndicator(Colors.green, 'Жиры: $_totalFatsг'),
               _buildNutrientIndicator(
                 Colors.orange,
-                'Углеводы: ${_totalCarbs}г',
+                'Углеводы: $_totalCarbsг',
               ),
             ],
           ),

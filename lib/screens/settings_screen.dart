@@ -30,15 +30,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final calories = int.tryParse(_dailyCaloriesController.text);
     if (calories != null && calories > 0) {
       await CalorieTrackerStorage.saveDailyCalories(calories);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Дневная норма калорий сохранена')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Дневная норма калорий сохранена')),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Пожалуйста, введите корректное значение калорий'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Пожалуйста, введите корректное значение калорий'),
+          ),
+        );
+      }
     }
   }
 

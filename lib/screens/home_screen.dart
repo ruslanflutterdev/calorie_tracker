@@ -63,12 +63,13 @@ class _HomeScreenState extends State<HomeScreen> {
       firstDate: DateTime(2000),
       lastDate: DateTime(2050),
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
+
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
       );
-      if (pickedTime != null) {
+      if (pickedTime != null && mounted) {
         setState(() {
           _selectedDateTime = DateTime(
             picked.year,
@@ -94,20 +95,20 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       final List<MealModel> existingMeals =
-          await CalorieTrackerStorage.loadMeals();
+      await CalorieTrackerStorage.loadMeals();
       existingMeals.add(newMeal);
       await CalorieTrackerStorage.saveMeals(existingMeals);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Прием пищи добавлен')));
-
-      _descriptionController.clear();
-      _caloriesController.clear();
-      setState(() {
-        _selectedDateTime = DateTime.now();
-      });
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Прием пищи добавлен')));
+        _descriptionController.clear();
+        _caloriesController.clear();
+        setState(() {
+          _selectedDateTime = DateTime.now();
+        });
+        Navigator.pop(context);
+      }
     }
   }
 

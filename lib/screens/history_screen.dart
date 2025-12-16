@@ -22,9 +22,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _loadMeals() async {
     final meals = await CalorieTrackerStorage.loadMeals();
-    setState(() {
-      _meals = meals;
-    });
+      setState(() {
+        _meals = meals;
+      });
+
   }
 
   Future<void> _deleteMeal(int index) async {
@@ -32,6 +33,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       _meals.removeAt(index);
     });
     await CalorieTrackerStorage.saveMeals(_meals);
+
   }
 
   Future<void> _editMeal(

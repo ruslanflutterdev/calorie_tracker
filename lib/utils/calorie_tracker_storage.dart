@@ -14,6 +14,7 @@ class CalorieTrackerStorage {
         meals.map((meal) => meal.toMap()).toList();
     final json = jsonEncode(data);
     await _saveData('meals', json);
+    //mealsNotifier.value = meals;
   }
 
   static Future<void> saveDailyCalories(int calories) async {
@@ -37,6 +38,7 @@ class CalorieTrackerStorage {
     final filePath = '$dirPath/$fileName.json';
     final file = File(filePath);
     await file.writeAsString(data);
+
   }
 
   static Future<List<MealModel>> loadMeals() async {
@@ -46,8 +48,11 @@ class CalorieTrackerStorage {
       final file = File(filePath);
       final json = await file.readAsString();
       final List<dynamic> data = jsonDecode(json);
+      final _ = data.map((meal) => MealModel.fromMap(meal)).toList();
+      //mealsNotifier.value = meals;
       return data.map((meal) => MealModel.fromMap(meal)).toList();
     } catch (err) {
+      //mealsNotifier.value = [];
       return [];
     }
   }
